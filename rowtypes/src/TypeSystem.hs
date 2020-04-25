@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE TupleSections #-}
 
 module TypeSystem where
 
@@ -76,23 +77,22 @@ instantiate (Forall vars ty) = do
     let sub = Map.fromList (zip (Set.toList vars) newVars)
     pure (sub •> relax ty)
 
-inferExpr :: Expr -> Typecheck Type
-inferExpr EInt{}        = pure TInt
-inferExpr EFloat{}      = pure TFloat
-inferExpr EChar{}       = pure TChar
-inferExpr (EId name)    =
-    asks (Map.lookup name)
-    >>= maybe (throwError (name <> " not found")) instantiate
-inferExpr (EApp e1 e2)  = do
-    t1  <- inferExpr e1
-    t2  <- inferExpr e2
-    t3  <- fresh "$"
-    sub <- unify t1 (TArrow t2 t3)
-    pure (sub •> t3)
-inferExpr (ELam var e1) = do
-    t2 <- fresh "$"
-    t1 <- local (Map.insert var (Forall mempty t2)) (inferExpr e1)
-    pure (TArrow t2 t1)
+elabExpr :: Expr -> Typecheck (Expr, Type)
+elabExpr e@EInt{}       = pure (e, TInt)
+elabExpr e@EFloat{}     = pure (e, TFloat)
+elabExpr e@EChar{}      = pure (e, TChar)
+elabExpr e@(EId name)   =
+    asks (Map.lookup name) >>= fmap (e,) . maybe (throwError (name <> " not found")) instantiate
+elabExpr (EApp e1 e2)   = do
+    (elab1, t1) <- elabExpr e1
+    (elab2, t2) <- elabExpr e2
+    t3          <- fresh "$"
+    sub         <- unify t1 (TArrow t2 t3)
+    pure (EApp elab1 elab2, sub •> t3)
+elabExpr (ELam var e1) = do
+    t2          <- fresh "$"
+    (elab1, t1) <- local (Map.insert var (Forall mempty t2)) (elabExpr e1)
+    pure (ELam var elab1, TArrow t2 t1)
 
 --------------------------------------------------------------------------------
 
