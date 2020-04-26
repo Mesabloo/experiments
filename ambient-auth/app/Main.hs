@@ -32,7 +32,7 @@ system = env SystemAuth ()
 
 main :: IO ()
 main = do
-  let !(_, res) = runEnv (system =>> main')
+  (_, !res) <- pure $ runEnv (system =>> main')
   pure res
 
 main' :: Env SystemAuth () -> ()
