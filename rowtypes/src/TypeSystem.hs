@@ -16,6 +16,7 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Maybe (fromMaybe)
+import Data.Bifunctor (bimap)
 
 type Environment = Map String Scheme
 
@@ -93,6 +94,13 @@ elabExpr (ELam var e1) = do
     t2          <- fresh "$"
     (elab1, t1) <- local (Map.insert var (Forall mempty t2)) (elabExpr e1)
     pure (ELam var elab1, TArrow t2 t1)
+elabExpr (ERecord fields) = do
+    elab         <- traverse elabExpr fields
+    let fieldsE = fst <$> elab
+        fieldsT = snd <$> elab
+        elabEx  = ERecord fieldsE
+        ty      = TRecord (TRow fieldsT Nothing)
+    pure (elabEx, ty)
 
 --------------------------------------------------------------------------------
 
