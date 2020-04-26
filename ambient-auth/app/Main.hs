@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Main where
 
 import Control.Comonad
@@ -30,12 +32,11 @@ system = env SystemAuth ()
 
 main :: IO ()
 main = do
-  let (_, res) = runEnv (system =>> main')
+  let !(_, res) = runEnv (system =>> main')
   pure res
 
 main' :: Env SystemAuth () -> ()
-main' auth =
-  readLine =>> liftWith deriveInputAuth _
+main' = liftWith deriveInputAuth readLine =>= liftWith deriveOutputAuth putLine
 
 liftWith :: (auth -> auth') -> (Env auth' a -> b) -> (Env auth a -> b)
 liftWith f g env' = g (local f env')
