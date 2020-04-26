@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 828572f6666132291233d9287fa74f6a16e09d56cc0fa378c090eb7b1ae23be4
+-- hash: f5b390142a324f2757d35e432afb5a48e9a504d2769cd00c86e6cc6e89bace75
 
 name:           ambient-auth
 version:        0.1.0.0
@@ -25,17 +25,6 @@ source-repository head
   type: git
   location: https://github.com/mesabloo/ambient-auth
 
-library
-  exposed-modules:
-      Lib
-  other-modules:
-      Paths_ambient_auth
-  hs-source-dirs:
-      src
-  build-depends:
-      base >=4.7 && <5
-  default-language: Haskell2010
-
 executable ambient-auth-exe
   main-is: Main.hs
   other-modules:
@@ -44,19 +33,7 @@ executable ambient-auth-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      ambient-auth
-    , base >=4.7 && <5
-  default-language: Haskell2010
-
-test-suite ambient-auth-test
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Paths_ambient_auth
-  hs-source-dirs:
-      test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      ambient-auth
-    , base >=4.7 && <5
+      base >=4.7 && <5
+    , codo-notation
+    , comonad
   default-language: Haskell2010
