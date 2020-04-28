@@ -31,6 +31,8 @@ class Freevars s where
 instance Freevars Type where
     free (TArrow t1 t2) = free t1 <> free t2
     free (TVar v)       = Set.singleton v
+    free (TRecord row)  = free row
+    free (TRow fs ext)  = foldMap free fs <> maybe mempty free ext
     free _              = mempty
 
 instance (Freevars s, Functor f, Foldable f) => Freevars (f s) where
@@ -55,6 +57,8 @@ instance (Substitute s, Functor f) => Substitute (f s) where
 
 instance Substitute Type where
     applySubst sub (TArrow t1 t2) = TArrow (sub •> t1) (sub •> t2)
+    applySubst sub (TRecord row)  = TRecord (sub •> row)
+    applySubst sub (TRow fs ext)  = TRow (applySubst sub <$> fs) (applySubst sub <$> ext)
     applySubst sub var@(TVar v)   = fromMaybe var (Map.lookup v sub)
     applySubst _   t              = t
 
@@ -70,6 +74,8 @@ fresh prefix = do
 relax :: Type -> Type
 relax (TRigid v)     = TVar v
 relax (TArrow t1 t2) = TArrow (relax t1) (relax t2)
+relax (TRecord row)  = TRecord (relax row)
+relax (TRow fs ext)  = TRow (relax <$> fs) (relax <$> ext)
 relax t              = t
 
 instantiate :: Scheme -> Typecheck Type
@@ -109,6 +115,9 @@ unify t1 t2 | t1 == t2              = pure mempty
 unify (TArrow t1 t2) (TArrow t3 t4) = unifyMany [t1, t2] [t3, t4]
 unify (TVar v)       t              = tryBind v t
 unify t              (TVar v)       = tryBind v t
+unify (TRecord row1) (TRecord row2) = unify row1 row2
+unify (TRow fs1 e1)  (TRow fs2 e2)  = do
+  throwError "Not yet implemented! Come back later."
 unify t1             t2             = throwError ("Could not unify " <> show t1 <> " and " <> show t2)
 
 unifyMany :: [Type] -> [Type] -> Typecheck Subst
