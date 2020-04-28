@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f5b390142a324f2757d35e432afb5a48e9a504d2769cd00c86e6cc6e89bace75
+-- hash: 5dec80f32545db478ba038aa83be8da899d27acc549191a2b45046f30c946b8c
 
 name:           ambient-auth
 version:        0.1.0.0
@@ -31,7 +31,7 @@ executable ambient-auth-exe
       Paths_ambient_auth
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       base >=4.7 && <5
     , codo-notation
