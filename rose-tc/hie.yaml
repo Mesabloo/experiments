@@ -1,0 +1,6 @@
+cradle:
+  stack:
+    - component: rose-tc:exe:rose-tc-exe
+      path: ./app
+    - component: rose-tc:lib
+      path: ./src
