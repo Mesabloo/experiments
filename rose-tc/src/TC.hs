@@ -64,24 +64,38 @@ instance Pretty Type where
   pretty IntT               = magenta $ text "int"
   pretty (VarT v)           = black . text $ Text.unpack v
   pretty (RigidT r)         = dullblue . text $ Text.unpack r
-  pretty (UnionT t1 t2)     = parens $ pretty t1 <+> dullyellow (text "⊙") <+> pretty t2
-  pretty (ProductT p)       = dullyellow (text "∏") <> pretty p
-  pretty (SumT p)           = dullyellow (text "∑") <> pretty p
+  pretty (UnionT t1 t2)     = pretty t1 <+> dullyellow (text "⊙") <+> pretty t2
+  pretty (ProductT p)       = dullyellow (text "∏") <> maybeParens p
+  pretty (SumT p)           = dullyellow (text "∑") <> maybeParens p
   pretty (ConstraintT cs t) = tupled (pretty <$> cs) <+> dullyellow (text "⇒") <+> pretty t
   pretty (ForallT v t)      = dullyellow (text "∀") <+> hsep (dullblue . text . Text.unpack <$> v) <> dot <+> pretty t
   pretty (RowT fields)      = encloseSep (white lbrace) (white rbrace) (white comma) $ showField <$> fields
     where showField (k, v) = dullcyan (text $ Text.unpack k) <+> colon <> colon <+> pretty v
-  pretty (FunT t1 t2)       = parens (pretty t1) <+> dullyellow (text "→") <+> pretty t2
+  pretty (FunT t1 t2)       = maybeParens t1 <+> dullyellow (text "→") <+> pretty t2
+
+maybeParens :: Type -> Doc
+maybeParens t1@(UnionT _ _)      = parens (pretty t1)
+maybeParens t1@(ConstraintT _ _) = parens (pretty t1)
+maybeParens t1@(ForallT _ _)     = parens (pretty t1)
+maybeParens t1@(FunT _ _)        = parens (pretty t1)
+maybeParens t1                   = pretty t1
 
 instance Pretty Constr where
-  pretty (EqC t1 t2)     = pretty t1 <+> dullyellow (text "~") <+> pretty t2
-  pretty (SubsetC t1 t2) = pretty t1 <+> dullyellow (text "⧀") <+> pretty t2
+  pretty (EqC t1 t2)     = maybeParens t1 <+> dullyellow (text "~") <+> maybeParens t2
+  pretty (SubsetC t1 t2) = maybeParens t1 <+> dullyellow (text "⧀") <+> maybeParens t2
 
 instance Pretty Expr where
   pretty (LamE v e)       = magenta (text "λ") <> white (text $ Text.unpack v) <> dot <+> pretty e
   pretty (VarE v)         = dullblue (text $ Text.unpack v)
   pretty (IntE i)         = dullred (integer i)
-  pretty (SelectE e i)    = parens (pretty e) <> dullyellow dot <> dullcyan (text $ Text.unpack i)
+  pretty (SelectE e i)    = maybeParens' e <> dullyellow dot <> dullcyan (text $ Text.unpack i)
+    where
+      maybeParens' e@(LamE _ _)   = parens (pretty e)
+      maybeParens' e@(PlusE _ _)  = parens (pretty e)
+      maybeParens' e@(UnionE _ _) = parens (pretty e)
+      maybeParens' e@(ProjE _)    = parens (pretty e)
+      maybeParens' e@(CaseE _ _)  = parens (pretty e)
+      maybeParens' e              = pretty e
   pretty (PlusE e1 e2)    = pretty e1 <+> dullyellow (text "+") <+> pretty e2
   pretty (UnionE e1 e2)   = pretty e1 <+> dullyellow (text "★") <+> pretty e2
   pretty (RecordE fs ext) = white lbrace <+> mconcat (punctuate (white comma) (showField <$> fs)) <> maybe empty (mappend (text " | ") . text . Text.unpack) ext <+> white rbrace
@@ -167,10 +181,8 @@ runTypechecker ex = do
     trace ("--> Solving newly generated constraints: " <> show (pretty <$> generated)) $ pure ()
 
     pure (null generated, (remaining, generated, subs <> sub <> sub2))
-  --(unsolved2, sub3) <- runExcept $ resolveConstraints generated
 
   trace ("--> Remaining constraints: " <> show (pretty <$> unsolved)) $ pure ()
-  
   trace ("--> Complete substitution: " <> show (prettySub <$> Map.toList sub)) $ pure ()
 
   let generalizedTy = generalize mempty $ applySubst sub (ConstraintT unsolved ty)
@@ -187,9 +199,9 @@ runTypechecker ex = do
       else loopUntil newInput f
 
 reduceConstraints :: MonadError Text m => [Constr] -> m ([Constr], [Constr], Subst)
-reduceConstraints []                   = pure ([], [], mempty)
-reduceConstraints [c]                  = pure ([c], [], mempty)
-reduceConstraints (SubsetC t1 t2 : cs) = do
+reduceConstraints []                       = pure ([], [], mempty)
+reduceConstraints [c]                      = pure ([c], [], mempty)
+reduceConstraints (c@(SubsetC t1 t2) : cs) = do
   let (laws, left) = partition (subset t1 t2) cs
   (rem, gen, sub) <- reduceConstraints left
 
@@ -201,7 +213,7 @@ reduceConstraints (SubsetC t1 t2 : cs) = do
         SubsetC t3 t4 | t1 == t4 || t2 == t3 ->
           if t1 == t4 then [ SubsetC t3 t2 ] else [ SubsetC t1 t4 ]
   
-  pure (rem, gen2 <> gen, sub)
+  pure ((if null laws then (c :) else id) rem, gen2 <> gen, sub)
   where subset _ _ (EqC _ _)         = False
         subset t1 t2 (SubsetC t3 t4) = t1 == t4 || t2 == t3
 reduceConstraints (c : cs)             = do
@@ -227,8 +239,8 @@ hasConcreteConstraints :: [Constr] -> Bool
 hasConcreteConstraints [] = False
 hasConcreteConstraints (c : cs) =
   hasConcreteConstraints cs || case c of
-    EqC t1 t2     -> not (hasVar t1 && hasVar t2)
-    SubsetC t1 t2 -> not (hasVar t1 && hasVar t2)
+    EqC t1 t2     -> not (hasVar t1) && not (hasVar t2)
+    SubsetC t1 t2 -> not (hasVar t1) && not (hasVar t2)
 
 hasVar :: Type -> Bool
 hasVar (VarT _)          = True
@@ -331,4 +343,11 @@ typecheck (ProjE r) = do
   tell [EqC (ProductT z1) tr, SubsetC z2 z1]
 
   pure (ProductT z2)
+typecheck (PlusE e1 e2) = do
+  t1 <- typecheck e1
+  t2 <- typecheck e2
+
+  tell [EqC t1 IntT, EqC t2 IntT]
+
+  pure IntT
 typecheck ex = throwError $ "typecheck '" <> Text.pack (show (pretty ex)) <> "': not yet implemented"

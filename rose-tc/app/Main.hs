@@ -32,6 +32,18 @@ main = do
   printTypeOrError expr
   -- λ r. (prj r).x :: ∀ t z₁. ({ x :: t } ⧀ z₁) ⇒ ∏z₁ → t
 
+  let expr = LamE "r" $ PlusE (SelectE (VarE "r") "x") (IntE 3)
+  printTypeOrError expr
+  -- λ r. r.x + 3 :: ∀ z₁. ({ x :: int } ⧀ z₁) ⇒ ∏z₁ → int
+
+  let expr = LamE "r" $ LamE "x" $ PlusE (SelectE (ProjE (VarE "r")) "y") (VarE "x")
+  printTypeOrError expr
+  -- λ r. λ x. (prj r).y + x :: ∀ z₁. ({ y :: int } ⧀ z₁) ⇒ ∏z₁ → int → int
+
+  let expr = LamE "r" $ SelectE (SelectE (VarE "r") "x") "y"
+  printTypeOrError expr
+  -- λ r. r.x.y :: ∀ t z₁ z₂. ({x :: ∏z₂} ⧀ z₁, {y :: t} ⧀ z₂) ⇒ ∏z₁ → t
+
   pure ()
   where
     printTypeOrError ex =
