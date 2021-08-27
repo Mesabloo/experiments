@@ -67,9 +67,9 @@ instance Pretty Type where
   pretty (UnionT t1 t2)     = pretty t1 <+> dullyellow (text "⊙") <+> pretty t2
   pretty (ProductT p)       = dullyellow (text "∏") <> maybeParens p
   pretty (SumT p)           = dullyellow (text "∑") <> maybeParens p
-  pretty (ConstraintT cs t) = tupled (pretty <$> cs) <+> dullyellow (text "⇒") <+> pretty t
+  pretty (ConstraintT cs t) = white lparen <> hcat (punctuate (white comma <> space) $ pretty <$> cs) <> white rparen <+> dullyellow (text "⇒") <+> pretty t
   pretty (ForallT v t)      = dullyellow (text "∀") <+> hsep (dullblue . text . Text.unpack <$> v) <> dot <+> pretty t
-  pretty (RowT fields)      = encloseSep (white lbrace) (white rbrace) (white comma) $ showField <$> fields
+  pretty (RowT fields)      = white lbrace <> hcat (punctuate (white comma <> space) (showField <$> fields)) <> white rbrace
     where showField (k, v) = dullcyan (text $ Text.unpack k) <+> colon <> colon <+> pretty v
   pretty (FunT t1 t2)       = maybeParens t1 <+> dullyellow (text "→") <+> pretty t2
 
@@ -98,11 +98,11 @@ instance Pretty Expr where
       maybeParens' e              = pretty e
   pretty (PlusE e1 e2)    = pretty e1 <+> dullyellow (text "+") <+> pretty e2
   pretty (UnionE e1 e2)   = pretty e1 <+> dullyellow (text "★") <+> pretty e2
-  pretty (RecordE fs ext) = white lbrace <+> mconcat (punctuate (white comma) (showField <$> fs)) <> maybe empty (mappend (text " | ") . text . Text.unpack) ext <+> white rbrace
+  pretty (RecordE fs ext) = white lbrace <+> hcat (punctuate (white comma <> space) (showField <$> fs)) <> maybe empty (mappend (text " | ") . text . Text.unpack) ext <+> white rbrace
     where showField (k, v) = dullcyan (text $ Text.unpack k) <+> equals <+> pretty v
   pretty (VariantE n es)  = white langle <+> text (Text.unpack n) <+> hsep (pretty <$> es) <+> white rangle
   pretty (ProjE e)        = magenta (text "prj") <+> pretty e
-  pretty (CaseE e bs)     = magenta (text "case") <+> pretty e <+> magenta (text "of") <+> encloseSep (white rbrace) (white rbrace) (white comma) (showBranch <$> bs)
+  pretty (CaseE e bs)     = magenta (text "case") <+> pretty e <+> magenta (text "of") <+> white lbrace <> hcat (punctuate (white comma <> space) $ showBranch <$> bs) <> white rbrace
     where showBranch (p, v) = pretty p <+> magenta (text "→") <+> pretty v
 
 instance Pretty Pattern where
@@ -110,7 +110,7 @@ instance Pretty Pattern where
   pretty (VarP v)                = white (text $ Text.unpack v)
   pretty WildcardP               = magenta $ text "_"
   pretty (ConstructorP v ps)     = parens $ dullgreen (text $ Text.unpack v) <+> hsep (pretty <$> ps)
-  pretty (RecordP fields ignore) = white lbrace <+> mconcat (punctuate (white comma) (showField <$> fields)) <> (if ignore then text ", .." else empty) <+> white rbrace
+  pretty (RecordP fields ignore) = white lbrace <+> hcat (punctuate (white comma <> space) (showField <$> fields)) <> (if ignore then text ", .." else empty) <+> white rbrace
     where showField (k, p) = dullcyan (text $ Text.unpack k) <+> equals <+> pretty p
 
 
