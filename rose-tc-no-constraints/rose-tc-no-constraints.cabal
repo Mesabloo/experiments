@@ -1,0 +1,73 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           rose-tc-no-constraints
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/mesabloo/rose-tc-no-constraints#readme>
+homepage:       https://github.com/mesabloo/rose-tc-no-constraints#readme
+bug-reports:    https://github.com/mesabloo/rose-tc-no-constraints/issues
+author:         Mesabloo
+maintainer:     example@example.com
+copyright:      2021 Mesabloo
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/mesabloo/rose-tc-no-constraints
+
+library
+  exposed-modules:
+      TC
+  other-modules:
+      Paths_rose_tc_no_constraints
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      ansi-wl-pprint
+    , base >=4.7 && <5
+    , containers
+    , mtl
+    , text
+  default-language: Haskell2010
+
+executable rose-tc-no-constraints-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_rose_tc_no_constraints
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ansi-wl-pprint
+    , base >=4.7 && <5
+    , containers
+    , mtl
+    , rose-tc-no-constraints
+    , text
+  default-language: Haskell2010
+
+test-suite rose-tc-no-constraints-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_rose_tc_no_constraints
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ansi-wl-pprint
+    , base >=4.7 && <5
+    , containers
+    , mtl
+    , rose-tc-no-constraints
+    , text
+  default-language: Haskell2010

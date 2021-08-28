@@ -1,0 +1,55 @@
+name:                rose-tc-no-constraints
+version:             0.1.0.0
+github:              "mesabloo/rose-tc-no-constraints"
+license:             BSD3
+author:              "Mesabloo"
+maintainer:          "example@example.com"
+copyright:           "2021 Mesabloo"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/mesabloo/rose-tc-no-constraints#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- mtl
+- text
+- ansi-wl-pprint
+
+library:
+  source-dirs: src
+
+ghc-options:
+- -Wall
+
+executables:
+  rose-tc-no-constraints-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - rose-tc-no-constraints
+
+tests:
+  rose-tc-no-constraints-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - rose-tc-no-constraints
