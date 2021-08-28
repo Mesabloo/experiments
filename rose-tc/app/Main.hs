@@ -44,6 +44,10 @@ main = do
   printTypeOrError expr
   -- λ r. r.x.y :: ∀ t z₁ z₂. ({x :: ∏z₂} ⧀ z₁, {y :: t} ⧀ z₂) ⇒ ∏z₁ → t
 
+  let expr = LamE "r" $ PlusE (SelectE (VarE "r") "x") (SelectE (VarE "r") "y")
+  printTypeOrError expr
+  -- λ r. r.x + r.y :: ∀ z₁. ({x :: int, y :: int} ⧀ z₁) ⇒ ∏z₁ → int
+
   pure ()
   where
     printTypeOrError ex =

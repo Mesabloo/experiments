@@ -205,17 +205,23 @@ reduceConstraints (c@(SubsetC t1 t2) : cs) = do
   let (laws, left) = partition (subset t1 t2) cs
   (rem, gen, sub) <- reduceConstraints left
 
-  let gen2 = (applySubst_s sub <$> laws) >>= \ case
-        EqC _ _                   -> []
-        -- symetry: t1 <: t2, t2 <: t1
+  let gen2 = laws >>= (\ case
+        EqC _ _                              -> []
+        -- symetry: t1 <: t2, t2 <: t1 = t1 ~ t2
         SubsetC t3 t4 | t1 == t4 && t2 == t3 -> [ EqC t1 t2 ]
-        -- trans: t1 <: t2, t2 <: t3
+        -- trans: t1 <: t2, t2 <: t3 = t1 <: t3
         SubsetC t3 t4 | t1 == t4 || t2 == t3 ->
           if t1 == t4 then [ SubsetC t3 t2 ] else [ SubsetC t1 t4 ]
-  
+        -- distrib: t1 <: t2, t3 <: t2 = (t1 × t3) <: t2
+        SubsetC t3 t4 | t2 == t4             -> case (t1, t3) of
+          (RowT f1, RowT f2) -> [ SubsetC (RowT $ f1 <> f2) t2 ]
+          _                  -> [ SubsetC (UnionT t1 t3) t2 ]
+        _                                    -> []
+        ) . applySubst_s sub
+
   pure ((if null laws then (c :) else id) rem, gen2 <> gen, sub)
   where subset _ _ (EqC _ _)         = False
-        subset t1 t2 (SubsetC t3 t4) = t1 == t4 || t2 == t3
+        subset t1 t2 (SubsetC t3 t4) = t1 == t4 || t2 == t3 || t2 == t4
 reduceConstraints (c : cs)             = do
   (rem, gen, sub) <- reduceConstraints cs
   pure (applySubst_s sub c : rem, gen, sub)
@@ -230,7 +236,7 @@ resolveConstraints (c : cs) = do
 
   let subs = sub1 <> sub2
   let css  = applySubst_s sub2 <$> (cs1 <> cs2)
-      
+
   if hasConcreteConstraints css
   then second (mappend subs) <$> resolveConstraints css
   else pure (css, subs)
